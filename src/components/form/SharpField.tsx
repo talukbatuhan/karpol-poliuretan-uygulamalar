@@ -4,18 +4,20 @@ interface SharpFieldProps {
   label: string;
   htmlFor: string;
   error?: string;
+  required?: boolean;
   className?: string;
   fullWidth?: boolean;
   children: ReactNode;
 }
 
 export const sharpInputClassName =
-  "w-full border border-black bg-white px-3 py-2 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-navy focus:border-navy placeholder:text-slate-400";
+  "w-full border border-black bg-white px-3 py-2 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-navy focus:border-navy placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
 
 export function SharpField({
   label,
   htmlFor,
   error,
+  required = false,
   className = "",
   fullWidth = false,
   children,
@@ -29,6 +31,7 @@ export function SharpField({
         className="text-xs font-medium uppercase tracking-wide text-slate-600"
       >
         {label}
+        {required && <span className="ml-0.5 text-red-700">*</span>}
       </label>
       {children}
       {error && (
