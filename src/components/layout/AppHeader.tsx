@@ -1,9 +1,19 @@
 import Link from "next/link";
 
+import { AuthActions } from "@/components/layout/AuthActions";
+
+type AppNavKey = "is-takip" | "firmalar" | "conta-takip";
+
 interface AppHeaderProps {
   title: string;
-  active: "is-takip" | "firmalar";
+  active: AppNavKey;
 }
+
+const NAV_ITEMS: { key: AppNavKey; href: string; label: string }[] = [
+  { key: "is-takip", href: "/", label: "İş Takip" },
+  { key: "firmalar", href: "/firmalar", label: "Firmalar" },
+  { key: "conta-takip", href: "/conta-takip", label: "Conta Takip" },
+];
 
 export function AppHeader({ title, active }: AppHeaderProps) {
   return (
@@ -18,28 +28,24 @@ export function AppHeader({ title, active }: AppHeaderProps) {
               {title}
             </h1>
           </div>
-          <nav className="flex gap-2">
-            <Link
-              href="/"
-              className={`border px-4 py-2 text-xs font-medium uppercase tracking-wide transition-colors ${
-                active === "is-takip"
-                  ? "border-black bg-navy text-white"
-                  : "border-black bg-white text-charcoal hover:bg-slate-100"
-              }`}
-            >
-              İş Takip
-            </Link>
-            <Link
-              href="/firmalar"
-              className={`border px-4 py-2 text-xs font-medium uppercase tracking-wide transition-colors ${
-                active === "firmalar"
-                  ? "border-black bg-navy text-white"
-                  : "border-black bg-white text-charcoal hover:bg-slate-100"
-              }`}
-            >
-              Firmalar
-            </Link>
-          </nav>
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            <AuthActions />
+            <nav className="flex flex-wrap gap-2">
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className={`border px-4 py-2 text-xs font-medium uppercase tracking-wide transition-colors ${
+                  active === item.key
+                    ? "border-black bg-navy text-white"
+                    : "border-black bg-white text-charcoal hover:bg-slate-100"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            </nav>
+          </div>
         </div>
       </div>
     </header>
