@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "İş Takip Paneli",
-  description: "Kurumsal iş takip ve yönetim paneli",
+  title: "Karpol Dashboard",
+  description: "Karpol yönetim paneli ve uygulama merkezi",
 };
 
 export default function RootLayout({

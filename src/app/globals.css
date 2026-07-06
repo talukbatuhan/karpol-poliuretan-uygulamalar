@@ -33,3 +33,71 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* ─── Adres etiketi yazdırma (A4 yatay) ───────────────────────────────────── */
+
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+.print-sheet {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 148.5mm;
+  height: 210mm;
+  background: white;
+  pointer-events: none;
+}
+
+.print-sheet--duplicate {
+  width: 297mm;
+}
+
+@media print {
+  html,
+  body {
+    width: 297mm;
+    height: 210mm;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body > *:not(#print-label) {
+    display: none !important;
+  }
+
+  #print-label {
+    display: flex !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 297mm;
+    height: 210mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    flex-direction: row;
+    align-items: stretch;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .label-half {
+    width: 148.5mm;
+    height: 210mm;
+    flex: 0 0 148.5mm;
+    overflow: hidden;
+    box-sizing: border-box;
+    page-break-inside: avoid;
+  }
+
+  .label-half + .label-half {
+    border-left: 1px dashed #ccc;
+  }
+}
