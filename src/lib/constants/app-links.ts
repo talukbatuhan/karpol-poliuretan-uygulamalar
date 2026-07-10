@@ -49,7 +49,7 @@ export const APP_LINKS: AppLink[] = [
     key: "teknik-resim",
     href: "/teknik-resim",
     label: "Teknik Resim",
-    description: "Ölçek, birim ve açı hesaplama araçları",
+    description: "Parametrik CAD ve teknik çizim uygulamaları",
   },
 ];
 

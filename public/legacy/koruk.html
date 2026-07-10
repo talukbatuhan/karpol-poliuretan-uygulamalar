@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="tr">
+<script>
+  (function () {
+    if (location.search.indexOf('embed=1') === -1) return;
+    document.documentElement.classList.add('embed-mode');
+    window.__karpolCenterView = function () {
+      if (typeof window.fitView === 'function') window.fitView();
+    };
+    function scheduleCenter() {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(window.__karpolCenterView);
+      });
+    }
+    window.addEventListener('load', function () {
+      setTimeout(scheduleCenter, 300);
+    });
+    window.addEventListener('resize', function () {
+      scheduleCenter();
+    });
+  })();
+</script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Karpol — Körük teknik resim</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&family=JetBrains+Mono:ital,wght@0,400..600;1,400..600&display=swap');
+
+    :root {
+      --surface-base: #eef2f7;
+      --surface-raised: #f8fafc;
+      --surface-panel: #ffffff;
+      --border-subtle: rgba(15, 23, 42, 0.08);
+      --border-default: rgba(15, 23, 42, 0.16);
+      --border-focus: rgba(2, 132, 199, 0.46);
+      --accent: #0284c7;
+      --accent-dim: rgba(2, 132, 199, 0.12);
+      --accent-glow: rgba(2, 132, 199, 0.16);
+      --accent-pressed: #0369a1;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --dim-color: #dc2626;
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);
+      --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.08);
+      --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      --radius-sm: 0;
+      --radius-md: 0;
+      --radius-lg: 0;
+      --space-section: 20px;
+      --space-field: 14px;
+      --sidebar-width: 304px;
+      --header-height: 56px;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Karpol sitesi iframe gömümü (?embed=1) — üst başlık gizlenir, dışa aktarma kalır */
+    html.embed-mode { --header-height: 48px; }
+    html.embed-mode .app-header .header-title { display: none !important; }
+    html.embed-mode .app-header {
+      justify-content: stretch;
+      height: var(--header-height);
+      min-height: var(--header-height);
+      padding: 0 12px;
+    }
+    html.embed-mode .header-actions { width: 100%; }
+    html.embed-mode .header-actions .hamburger-btn { display: flex !important; }
+    html.embed-mode, html.embed-mode body { height: 100%; overflow: hidden; touch-action: none; }
+    html.embed-mode #app { height: 100%; min-height: 0; overflow: hidden; }
+    html.embed-mode .app-shell {
+      height: calc(100vh - var(--header-height));
+      flex: 1; min-height: 0; overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      background: var(--surface-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    #app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+    .app-header {
+      flex-shrink: 0;
+      height: var(--header-height);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-xs), var(--shadow-inset);
+      position: relative;
+      z-index: 100;
+    }
+    .app-header::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.35;
+    }
+    .header-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .header-badge {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--surface-base);
+      background: linear-gradient(135deg, #38bdf8 0%, var(--accent-pressed) 100%);
+      padding: 5px 10px;
+      box-shadow: 0 0 20px var(--accent-glow);
+      flex-shrink: 0;
+    }
+    .app-header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .header-actions__exports { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+    .hamburger-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 38px;
+      height: 38px;
+      padding: 9px 8px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-default);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .hamburger-btn:hover { background: var(--accent-dim); border-color: var(--border-focus); }
+    .hamburger-btn span {
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: var(--text-primary);
+      transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+    .hamburger-btn.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger-btn.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger-btn.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border: 1px solid var(--border-default);
+      background: #ffffff;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { background: rgba(2, 132, 199, 0.08); border-color: var(--border-focus); box-shadow: 0 0 0 1px var(--accent-dim); }
+    .btn:active { transform: scale(0.98); }
+    .btn--primary {
+      background: linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, rgba(3, 105, 161, 0.36) 100%);
+      border-color: rgba(2, 132, 199, 0.42);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .btn--primary:hover {
+      background: linear-gradient(180deg, rgba(2, 132, 199, 0.3) 0%, rgba(3, 105, 161, 0.52) 100%);
+      border-color: var(--accent);
+      box-shadow: 0 4px 24px var(--accent-glow);
+    }
+
+    .app-shell {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - var(--header-height));
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--surface-panel);
+      border-right: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+      z-index: 60;
+      position: relative;
+    }
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); }
+
+    .sidebar__mobile-bar {
+      display: none;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sidebar__mobile-bar span {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .sidebar-close-btn {
+      width: 36px; height: 36px;
+      border: none;
+      background: var(--surface-raised);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-close-btn:hover { background: var(--accent-dim); color: var(--accent); }
+
+    .sidebar-section {
+      padding: var(--space-section) 18px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .sidebar-section:last-child { border-bottom: none; }
+    .sidebar-section-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .field { margin-bottom: var(--space-field); }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .field-unit {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .field .val-display {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .field input[type="number"] {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 10px 12px;
+      border: 1px solid var(--border-default);
+      background: #ffffff;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .field input[type="number"]:hover { border-color: rgba(148, 163, 184, 0.4); }
+    .field input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim), var(--shadow-inset);
+    }
+    .field input[type="range"] {
+      width: 100%;
+      margin-top: 8px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .field-hint {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .canvas-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      position: relative;
+      background:
+        linear-gradient(var(--border-subtle) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px) 0 0 / 24px 24px,
+        var(--surface-raised);
+    }
+
+    .canvas-toolbar {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+      z-index: 20;
+    }
+    .canvas-toolbar button {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-default);
+      background: #ffffff;
+      color: var(--text-secondary);
+      cursor: pointer;
+      box-shadow: var(--shadow-xs);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .canvas-toolbar button:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--border-focus); }
+
+    .canvas-hint {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.8);
+      padding: 4px 8px;
+      border: 1px solid var(--border-subtle);
+      z-index: 20;
+    }
+
+    #svgArea { width: 100%; height: 100%; cursor: grab; display: block; }
+    #svgArea:active { cursor: grabbing; }
+
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.2); z-index: 50; }
+    .sidebar-overlay.is-visible { display: block; }
+
+    @media (max-width: 820px) {
+      .sidebar {
+        position: absolute;
+        top: 0; bottom: 0; left: 0;
+        transform: translateX(-100%);
+      }
+      .sidebar.is-open { transform: translateX(0); }
+      .sidebar__mobile-bar { display: flex; }
+      .hamburger-btn { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-overlay" class="sidebar-overlay" aria-hidden="true"></div>
+  <div id="app">
+    <header class="app-header" role="banner">
+      <div class="header-title">
+        <span class="header-badge">Teknik resim</span>
+        <h1>Körük tasarımı</h1>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" title="Parametreler" aria-controls="sidebar" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="header-actions__exports">
+          <button type="button" class="btn" onclick="downloadPNG()">PNG indir</button>
+          <button type="button" class="btn btn--primary" onclick="downloadPDF()">PDF kaydet</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Körük parametreleri">
+        <div class="sidebar__mobile-bar">
+          <span>Parametreler</span>
+          <button type="button" class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Paneli kapat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Ağız Ölçüleri</div>
+          <div class="field">
+            <label>Sol ağız çapı (H1) <span class="val-display" id="valH1">120</span></label>
+            <input type="number" id="H1" value="120" min="40" max="300" step="1" oninput="draw()">
+            <input type="range" id="H1r" min="40" max="300" value="120" oninput="syncFrom('H1r','H1')">
+          </div>
+          <div class="field">
+            <label>Sağ ağız çapı (H2) <span class="val-display" id="valH2">120</span></label>
+            <input type="number" id="H2" value="120" min="40" max="300" step="1" oninput="draw()">
+            <input type="range" id="H2r" min="40" max="300" value="120" oninput="syncFrom('H2r','H2')">
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Gövde & Boğum</div>
+          <div class="field">
+            <label>Körük iç çapı (gövde) <span class="val-display" id="valD">140</span></label>
+            <input type="number" id="D_koruk" value="140" min="40" max="300" step="1" oninput="draw()">
+            <input type="range" id="D_korukr" min="40" max="300" value="140" oninput="syncFrom('D_korukr','D_koruk')">
+            <div class="field-hint">Sadece boğum tabanını etkiler, ağızlardan bağımsızdır.</div>
+          </div>
+          <div class="field">
+            <label>Boğum sayısı (N) <span class="val-display" id="valN">5</span></label>
+            <input type="number" id="N" value="5" min="2" max="15" step="1" oninput="draw()">
+            <input type="range" id="Nr" min="2" max="15" value="5" oninput="syncFrom('Nr','N')">
+          </div>
+          <div class="field">
+            <label>Boğum yüksekliği (h) <span class="val-display" id="valh">40</span></label>
+            <input type="number" id="h" value="40" min="10" max="100" step="1" oninput="draw()">
+            <input type="range" id="hr" min="10" max="100" value="40" oninput="syncFrom('hr','h')">
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Boy Ölçüleri</div>
+          <div class="field">
+            <label>Toplam uzunluk (L) <span class="val-display" id="valL">500</span></label>
+            <input type="number" id="L" value="500" min="200" max="800" step="1" oninput="draw()">
+            <input type="range" id="Lr" min="200" max="800" value="500" oninput="syncFrom('Lr','L')">
+          </div>
+          <div class="field">
+            <label>Yaka uzunluğu (düz kısım) <span class="val-display" id="valLyaka">50</span></label>
+            <input type="number" id="lyaka" value="50" min="20" max="150" step="1" oninput="draw()">
+            <input type="range" id="lyakar" min="20" max="150" value="50" oninput="syncFrom('lyakar','lyaka')">
+          </div>
+        </div>
+      </aside>
+
+      <div class="canvas-stage" id="canvas-stage">
+        <div class="canvas-toolbar">
+          <button type="button" onclick="zoomStep(1)" title="Yakınlaştır">+</button>
+          <button type="button" onclick="zoomStep(-1)" title="Uzaklaştır">−</button>
+          <button type="button" onclick="resetView()" title="Merkeze odakla">⤢</button>
+        </div>
+        <svg id="svgArea" xmlns="http://www.w3.org/2000/svg">
+          <g id="originGroup">
+            <line id="centerAxis" stroke="#64748b" stroke-width="1" stroke-dasharray="16,5,4,5" />
+            <path id="pathTop" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+            <path id="pathBottom" fill="none" stroke="#0f172a" stroke-width="2" stroke-linejoin="round" />
+            <g id="refLines"></g>
+            <g id="dims"></g>
+          </g>
+        </svg>
+        <div class="canvas-hint">Kaydır: sürükle · Yakınlaştır: fare tekerleği</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var panX = 0, panY = 0, userZoom = 1, fitScale = 1;
+    var isDragging = false, startX = 0, startY = 0;
+    var svgArea = document.getElementById('svgArea');
+    var originGroup = document.getElementById('originGroup');
+    var stage = document.getElementById('canvas-stage');
+    var contentBounds = { minX: -300, minY: -200, maxX: 300, maxY: 200 };
+
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    function num(id) { return parseFloat(document.getElementById(id).value); }
+    function intVal(id) { return parseInt(document.getElementById(id).value, 10); }
+
+    function syncFrom(rangeId, numId) {
+      document.getElementById(numId).value = document.getElementById(rangeId).value;
+      draw();
+    }
+    function syncRanges() {
+      [['H1','H1r'],['H2','H2r'],['D_koruk','D_korukr'],['N','Nr'],['h','hr'],['L','Lr'],['lyaka','lyakar']]
+        .forEach(function (pair) {
+          document.getElementById(pair[1]).value = document.getElementById(pair[0]).value;
+        });
+    }
+
+    function applyTransform() {
+      var s = fitScale * userZoom;
+      var rect = svgArea.getBoundingClientRect();
+      var cx = rect.width / 2;
+      var cy = rect.height / 2;
+      var mx = (contentBounds.minX + contentBounds.maxX) / 2;
+      var my = (contentBounds.minY + contentBounds.maxY) / 2;
+      originGroup.setAttribute(
+        'transform',
+        'translate(' + (cx + panX) + ',' + (cy + panY) + ') scale(' + s + ') translate(' + (-mx) + ',' + (-my) + ')'
+      );
+    }
+
+    window.fitView = function () {
+      var rect = svgArea.getBoundingClientRect();
+      var w = rect.width, hgt = rect.height;
+      if (w < 8 || hgt < 8) return;
+      var bw = (contentBounds.maxX - contentBounds.minX) || 1;
+      var bh = (contentBounds.maxY - contentBounds.minY) || 1;
+      var pad = 0.86;
+      fitScale = Math.min(w / bw, hgt / bh) * pad;
+      userZoom = 1;
+      panX = 0; panY = 0;
+      applyTransform();
+    };
+
+    function resetView() { window.fitView(); }
+
+    function zoomStep(dir) {
+      userZoom += dir > 0 ? 0.15 : -0.15;
+      if (userZoom < 0.2) userZoom = 0.2;
+      if (userZoom > 6) userZoom = 6;
+      applyTransform();
+    }
+
+    svgArea.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      userZoom += e.deltaY < 0 ? 0.12 : -0.12;
+      if (userZoom < 0.2) userZoom = 0.2;
+      if (userZoom > 6) userZoom = 6;
+      applyTransform();
+    }, { passive: false });
+
+    svgArea.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyTransform();
+    });
+    window.addEventListener('mouseup', function () { isDragging = false; });
+    window.addEventListener('resize', applyTransform);
+
+    function draw() {
+      var H1 = num('H1'), H2 = num('H2'), Dk = num('D_koruk');
+      var L = num('L'), N = intVal('N'), h = num('h'), lyaka = num('lyaka');
+
+      document.getElementById('valH1').innerText = H1;
+      document.getElementById('valH2').innerText = H2;
+      document.getElementById('valD').innerText = Dk;
+      document.getElementById('valL').innerText = L;
+      document.getElementById('valN').innerText = N;
+      document.getElementById('valh').innerText = h;
+      document.getElementById('valLyaka').innerText = lyaka;
+      syncRanges();
+
+      var xStart = -L / 2;
+      var xEnd = L / 2;
+
+      var axis = document.getElementById('centerAxis');
+      axis.setAttribute('x1', xStart - 50);
+      axis.setAttribute('x2', xEnd + 50);
+      axis.setAttribute('y1', 0);
+      axis.setAttribute('y2', 0);
+
+      var ptsTop = [];
+      var ptsBot = [];
+
+      // 1. Sol yaka (H1'e bağlı, düz paralel)
+      ptsTop.push({ x: xStart, y: -H1 / 2 });
+      ptsTop.push({ x: xStart + lyaka, y: -H1 / 2 });
+      ptsBot.push({ x: xStart, y: H1 / 2 });
+      ptsBot.push({ x: xStart + lyaka, y: H1 / 2 });
+
+      // 2. Körük kısmı (gövde çapı Dk'ya bağlı)
+      var bellowsLength = L - 2 * lyaka;
+      var dx = bellowsLength / (2 * N);
+      var crestXCoords = [];
+
+      for (var i = 1; i <= 2 * N - 1; i++) {
+        var px = xStart + lyaka + i * dx;
+        var isCrest = (i % 2 !== 0);
+        var pyTop = isCrest ? -(Dk / 2 + h) : -(Dk / 2);
+        var pyBot = isCrest ? (Dk / 2 + h) : (Dk / 2);
+        ptsTop.push({ x: px, y: pyTop });
+        ptsBot.push({ x: px, y: pyBot });
+        if (isCrest) crestXCoords.push(px);
+      }
+
+      // 3. Sağ yaka (H2'ye bağlı, düz paralel)
+      ptsTop.push({ x: xEnd - lyaka, y: -H2 / 2 });
+      ptsTop.push({ x: xEnd, y: -H2 / 2 });
+      ptsBot.push({ x: xEnd - lyaka, y: H2 / 2 });
+      ptsBot.push({ x: xEnd, y: H2 / 2 });
+
+      document.getElementById('pathTop').setAttribute('d', 'M ' + ptsTop.map(function (p) { return p.x + ' ' + p.y; }).join(' L '));
+      document.getElementById('pathBottom').setAttribute('d', 'M ' + ptsBot.map(function (p) { return p.x + ' ' + p.y; }).join(' L '));
+
+      var refLines = document.getElementById('refLines');
+      refLines.innerHTML = '';
+      crestXCoords.forEach(function (cx) {
+        refLines.innerHTML += '<line x1="' + cx + '" y1="' + (-(Dk / 2 + h)) + '" x2="' + cx + '" y2="' + (Dk / 2 + h) + '" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4" />';
+      });
+
+      // 4. Ölçülendirmeler
+      var dims = document.getElementById('dims');
+      var maxY = Math.max(H1 / 2, H2 / 2, Dk / 2 + h) + 45;
+      var dimMarkup = '<defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="' + '#dc2626' + '"/></marker></defs>';
+
+      function dimLine(x1, y1, x2, y2) {
+        return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#dc2626" stroke-width="1.2" marker-start="url(#arrow)" marker-end="url(#arrow)" />';
+      }
+      function guide(x1, y1, x2, y2) {
+        return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#94a3b8" stroke-width="0.8" />';
+      }
+      function dimText(x, y, text, vertical) {
+        var t = vertical ? ' transform="rotate(-90, ' + x + ', ' + y + ')"' : '';
+        return '<text x="' + x + '" y="' + y + '" fill="#dc2626" font-size="13" font-family="JetBrains Mono, monospace" font-weight="600" text-anchor="middle"' + t + '>' + text + '</text>';
+      }
+
+      // Sol ağız H1
+      dimMarkup += guide(xStart - 5, -H1 / 2, xStart - 38, -H1 / 2);
+      dimMarkup += guide(xStart - 5, H1 / 2, xStart - 38, H1 / 2);
+      dimMarkup += dimLine(xStart - 28, -H1 / 2, xStart - 28, H1 / 2);
+      dimMarkup += dimText(xStart - 34, 4, 'Ø' + H1, true);
+
+      // Sağ ağız H2
+      dimMarkup += guide(xEnd + 5, -H2 / 2, xEnd + 38, -H2 / 2);
+      dimMarkup += guide(xEnd + 5, H2 / 2, xEnd + 38, H2 / 2);
+      dimMarkup += dimLine(xEnd + 28, -H2 / 2, xEnd + 28, H2 / 2);
+      dimMarkup += dimText(xEnd + 22, 4, 'Ø' + H2, true);
+
+      // Toplam L
+      dimMarkup += guide(xStart, maxY - 22, xStart, maxY + 10);
+      dimMarkup += guide(xEnd, maxY - 22, xEnd, maxY + 10);
+      dimMarkup += dimLine(xStart, maxY, xEnd, maxY);
+      dimMarkup += dimText(0, maxY - 8, 'L=' + L, false);
+
+      dims.innerHTML = dimMarkup;
+
+      // İçerik sınırlarını güncelle (fit için)
+      var extentX = L / 2 + 55;
+      var extentYTop = Math.max(H1 / 2, H2 / 2, Dk / 2 + h) + 12;
+      var extentYBot = maxY + 18;
+      contentBounds = { minX: -extentX, maxX: extentX, minY: -extentYTop, maxY: extentYBot };
+
+      applyTransform();
+    }
+
+    /* ── Dışa aktarma (SVG → canvas) ── */
+    function buildExportSvg(scale) {
+      var pad = 40;
+      var bw = contentBounds.maxX - contentBounds.minX;
+      var bh = contentBounds.maxY - contentBounds.minY;
+      var w = Math.ceil((bw + pad * 2) * scale);
+      var hgt = Math.ceil((bh + pad * 2) * scale);
+      var inner = document.getElementById('originGroup').innerHTML;
+      var svg =
+        '<svg xmlns="' + SVGNS + '" width="' + w + '" height="' + hgt + '" viewBox="' +
+        (contentBounds.minX - pad) + ' ' + (contentBounds.minY - pad) + ' ' +
+        (bw + pad * 2) + ' ' + (bh + pad * 2) + '">' +
+        '<rect x="' + (contentBounds.minX - pad) + '" y="' + (contentBounds.minY - pad) +
+        '" width="' + (bw + pad * 2) + '" height="' + (bh + pad * 2) + '" fill="#ffffff"/>' +
+        inner + '</svg>';
+      return { svg: svg, w: w, h: hgt };
+    }
+
+    function renderToCanvas(scale, cb) {
+      var out = buildExportSvg(scale);
+      var img = new Image();
+      var blob = new Blob([out.svg], { type: 'image/svg+xml;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = out.w;
+        canvas.height = out.h;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, out.w, out.h);
+        ctx.drawImage(img, 0, 0, out.w, out.h);
+        URL.revokeObjectURL(url);
+        cb(canvas);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); };
+      img.src = url;
+    }
+
+    function downloadPNG() {
+      renderToCanvas(2, function (canvas) {
+        var link = document.createElement('a');
+        link.download = 'karpol-koruk.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    function downloadPDF() {
+      renderToCanvas(2, function (canvas) {
+        var w = window.open(URL.createObjectURL(new Blob(
+          ['<!DOCTYPE html><html><head><title>Karpol Körük</title></head><body style="margin:0"><img style="width:100%" src="' + canvas.toDataURL('image/png') + '"></body></html>'],
+          { type: 'text/html' }
+        )));
+        if (w) w.onload = function () { w.print(); };
+      });
+    }
+
+    /* ── Mobil kenar çubuğu ── */
+    function toggleSidebar() {
+      var sb = document.getElementById('sidebar');
+      var ov = document.getElementById('sidebar-overlay');
+      var hb = document.getElementById('hamburger-btn');
+      var open = sb.classList.toggle('is-open');
+      ov.classList.toggle('is-visible', open);
+      hb.classList.toggle('is-open', open);
+      hb.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('is-open');
+      document.getElementById('sidebar-overlay').classList.remove('is-visible');
+      var hb = document.getElementById('hamburger-btn');
+      hb.classList.remove('is-open');
+      hb.setAttribute('aria-expanded', 'false');
+    }
+    document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+
+    if (document.documentElement.classList.contains('embed-mode')) {
+      var __embedDraw = draw;
+      draw = function () {
+        __embedDraw();
+        if (window.__karpolCenterView) window.__karpolCenterView();
+      };
+    }
+
+    draw();
+    setTimeout(window.fitView, 60);
+  </script>
+</body>
+</html>

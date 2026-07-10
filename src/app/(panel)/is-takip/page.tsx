@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { SharpForm } from "@/components/SharpForm";
+import { WorkOrderPanel } from "@/components/work-order/WorkOrderPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export default function IsTakipPage() {
     <>
       <PageHeader title="İş Takip Paneli" />
       <div className="mx-auto max-w-4xl px-4 py-6 md:px-8 md:py-8">
-        <SharpForm />
+        <WorkOrderPanel />
       </div>
     </>
   );
