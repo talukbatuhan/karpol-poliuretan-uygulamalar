@@ -604,11 +604,20 @@ export function SharpForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full border border-black bg-navy px-4 py-3 text-sm font-medium uppercase tracking-wide text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-60"
+            aria-busy={isSubmitting}
+            className="flex w-full items-center justify-center gap-2.5 border border-black bg-navy px-4 py-3 text-sm font-medium uppercase tracking-wide text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-80"
           >
-            {isSubmitting
-              ? "Sıkıştırılıyor / kaydediliyor..."
-              : "Kaydet"}
+            {isSubmitting ? (
+              <>
+                <span
+                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                  aria-hidden
+                />
+                <span>Kaydediliyor...</span>
+              </>
+            ) : (
+              "Kaydet"
+            )}
           </button>
         </div>
       </form>
