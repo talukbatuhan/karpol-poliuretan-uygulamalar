@@ -237,7 +237,23 @@ export function SharpForm() {
   }
 
   return (
-    <div className="border border-black bg-white">
+    <div className="relative border border-black bg-white">
+      {isSubmitting && (
+        <div
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/80"
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            className="h-10 w-10 animate-spin rounded-full border-[3px] border-navy/20 border-t-navy"
+            aria-hidden
+          />
+          <p className="text-sm font-semibold uppercase tracking-wide text-navy">
+            Kaydediliyor...
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black px-4 py-4 md:px-6">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-charcoal">
           Yeni İş Kaydı
@@ -256,7 +272,7 @@ export function SharpForm() {
       </div>
 
       <form
-        onSubmit={handleSubmit((data) => void onSubmit(data))}
+        onSubmit={handleSubmit(onSubmit)}
         className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 md:p-6"
         noValidate
       >
