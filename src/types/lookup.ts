@@ -14,6 +14,8 @@ export interface UnitEntity extends LookupEntity {
 export interface LookupOption {
   value: string;
   label: string;
+  /** Personel için WhatsApp wa.me bağlantısı */
+  phone?: string | null;
 }
 
 export type LookupType =

@@ -1,4 +1,4 @@
-export type WorkOrderLookupType = "companies" | "job_types" | "personnel";
+export type WorkOrderLookupType = "job_types" | "personnel";
 
 export interface LookupItem {
   id: string;
@@ -15,17 +15,16 @@ export interface LookupItemInput {
 }
 
 export const WORK_ORDER_LOOKUP_LABELS: Record<WorkOrderLookupType, string> = {
-  companies: "Firmalar",
   job_types: "İş Türleri",
   personnel: "Personel",
 };
 
 export const WORK_ORDER_LOOKUP_FIELD_HINTS: Record<WorkOrderLookupType, string> = {
-  companies: "Talep Eden Firma ve Uygulayıcı Firma listelerinde kullanılır",
   job_types: "İş Türü seçiminde kullanılır",
-  personnel: "Talebi Oluşturan ve Sorumlu Personel listelerinde kullanılır (WhatsApp için telefon gerekli)",
+  personnel:
+    "Talebi Oluşturan ve Sorumlu Personel listelerinde kullanılır (WhatsApp'tan Gönder için telefon gerekli)",
 };
 
 export function isWorkOrderLookupType(value: string): value is WorkOrderLookupType {
-  return value === "companies" || value === "job_types" || value === "personnel";
+  return value === "job_types" || value === "personnel";
 }

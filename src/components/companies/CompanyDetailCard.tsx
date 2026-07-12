@@ -20,6 +20,7 @@ import {
 interface CompanyDetailCardProps {
   company: Company | null;
   isCreating: boolean;
+  canManage?: boolean;
   cityOptions: LookupOption[];
   companyTypeOptions: LookupOption[];
   onSave: (values: CompanyFormInput) => void;
@@ -66,6 +67,7 @@ function getFormDefaults(company: Company | null): CompanyFormInput {
 export function CompanyDetailCard({
   company,
   isCreating,
+  canManage = false,
   cityOptions,
   companyTypeOptions,
   onSave,
@@ -321,26 +323,34 @@ export function CompanyDetailCard({
         </FormSection>
 
         <div className="col-span-full flex flex-col gap-3 border-t border-black pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="submit"
-            disabled={isSubmitting || (!isCreating && !isDirty)}
-            className="w-full border border-black bg-navy px-4 py-3 text-sm font-medium uppercase tracking-wide text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[180px]"
-          >
-            {isSubmitting
-              ? "Kaydediliyor..."
-              : isCreating
-                ? "Firmayı Kaydet"
-                : "Güncelle"}
-          </button>
+          {canManage ? (
+            <>
+              <button
+                type="submit"
+                disabled={isSubmitting || (!isCreating && !isDirty)}
+                className="w-full border border-black bg-navy px-4 py-3 text-sm font-medium uppercase tracking-wide text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[180px]"
+              >
+                {isSubmitting
+                  ? "Kaydediliyor..."
+                  : isCreating
+                    ? "Firmayı Kaydet"
+                    : "Güncelle"}
+              </button>
 
-          {!isCreating && company && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="w-full border border-red-700 bg-white px-4 py-3 text-sm font-medium uppercase tracking-wide text-red-700 transition-colors hover:bg-red-50 sm:w-auto"
-            >
-              Firmayı Sil
-            </button>
+              {!isCreating && company && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="w-full border border-red-700 bg-white px-4 py-3 text-sm font-medium uppercase tracking-wide text-red-700 transition-colors hover:bg-red-50 sm:w-auto"
+                >
+                  Firmayı Sil
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">
+              Firma kartlarını yalnızca yöneticiler düzenleyebilir.
+            </p>
           )}
         </div>
       </form>

@@ -12,8 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: "Giriş gerekli" }, { status: 401 });
     }
 
-    const [companies, jobTypes, personnel] = await Promise.all([
-      listWorkOrderLookups("companies"),
+    const [jobTypes, personnel] = await Promise.all([
       listWorkOrderLookups("job_types"),
       listWorkOrderLookups("personnel"),
     ]);
@@ -43,11 +42,11 @@ export async function GET() {
     );
 
     return NextResponse.json({
-      companies: companies.map((item) => ({ value: item.id, label: item.label })),
       jobTypes: jobTypes.map((item) => ({ value: item.id, label: item.label })),
       personnel: personnel.map((item) => ({
         value: item.id,
         label: item.phone ? `${item.label} (${item.phone})` : item.label,
+        phone: item.phone ?? null,
       })),
       cities,
       cargoCompanies,

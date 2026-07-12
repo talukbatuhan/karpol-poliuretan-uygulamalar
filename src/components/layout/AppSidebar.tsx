@@ -2,37 +2,50 @@
 
 import Link from "next/link";
 
+import { useAccess } from "@/components/auth/AccessProvider";
 import { AuthActions } from "@/components/layout/AuthActions";
 import { useSidebar } from "@/components/layout/AppShell";
-import { APP_LINKS, type AppNavKey } from "@/lib/constants/app-links";
+import { AppNavIcon } from "@/components/layout/AppNavIcons";
+import type { AppNavKey } from "@/lib/constants/app-links";
 
 interface AppSidebarProps {
   activeKey?: AppNavKey;
 }
 
+function navItemClass(active: boolean, compact: boolean): string {
+  const base =
+    "flex items-center gap-2.5 border text-xs font-semibold uppercase tracking-wide transition-colors";
+  const state = active
+    ? "border-black bg-navy text-white"
+    : "border-transparent text-charcoal hover:border-black hover:bg-slate-50";
+  const size = compact ? "justify-center px-0 py-2.5" : "px-3 py-2.5";
+  return `${base} ${state} ${size}`;
+}
+
 export function AppSidebar({ activeKey }: AppSidebarProps) {
   const { collapsed, mobileOpen, toggleCollapsed, closeMobile } = useSidebar();
+  const { visibleApps, isLoading } = useAccess();
+  const compact = collapsed && !mobileOpen;
+  const expanded = !collapsed || mobileOpen;
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex h-full flex-col border-r border-black bg-white transition-transform duration-200 lg:static lg:z-auto lg:shrink-0 lg:translate-x-0 ${
-        mobileOpen ? "translate-x-0 w-72" : "-translate-x-full w-72"
-      } ${collapsed ? "lg:w-16" : "lg:w-64"}`}
+      className={`fixed inset-y-0 left-0 z-50 flex h-svh flex-col border-r border-black bg-white transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:z-auto lg:translate-x-0 ${
+        mobileOpen ? "translate-x-0" : "-translate-x-full"
+      } w-60 ${compact ? "lg:w-14" : "lg:w-52"}`}
     >
       <div
-        className={`flex items-center border-b border-black ${
-          collapsed && !mobileOpen
-            ? "justify-center px-2 py-4"
-            : "justify-between px-4 py-4"
+        className={`flex h-14 shrink-0 items-center border-b border-black ${
+          compact ? "justify-center px-1.5" : "justify-between gap-2 px-3"
         }`}
       >
-        {(!collapsed || mobileOpen) && (
+        {expanded && (
           <Link href="/" className="min-w-0" onClick={closeMobile}>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
               Karpol
             </p>
-            <h1 className="mt-0.5 truncate text-sm font-semibold uppercase tracking-wide text-charcoal">
-              Dashboard
+            <h1 className="truncate text-sm font-semibold uppercase tracking-wide text-charcoal">
+              Panel
             </h1>
           </Link>
         )}
@@ -41,68 +54,50 @@ export function AppSidebar({ activeKey }: AppSidebarProps) {
           type="button"
           onClick={toggleCollapsed}
           aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
-          className="hidden shrink-0 border border-black bg-white px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-charcoal hover:bg-slate-100 lg:inline-flex"
+          className="hidden h-8 w-8 shrink-0 items-center justify-center border border-black bg-white text-sm text-charcoal hover:bg-slate-100 lg:inline-flex"
         >
-          {collapsed ? "→" : "←"}
+          {collapsed ? "›" : "‹"}
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
-        {!collapsed || mobileOpen ? (
-          <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+      <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+        {expanded && (
+          <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
             Uygulamalar
           </p>
-        ) : null}
-        <ul className="space-y-1">
+        )}
+        <ul className="flex flex-col gap-0.5">
           <li>
             <Link
               href="/"
               title="Ana Sayfa"
               onClick={closeMobile}
-              className={`flex items-center border transition-colors ${
-                activeKey === undefined
-                  ? "border-black bg-navy text-white"
-                  : "border-transparent text-charcoal hover:border-black hover:bg-slate-50"
-              } ${collapsed && !mobileOpen ? "justify-center px-2 py-3" : "px-3 py-3"}`}
+              className={navItemClass(activeKey === undefined, compact)}
             >
-              <span className="text-xs font-semibold uppercase tracking-wide">
-                {collapsed && !mobileOpen ? "⌂" : "Ana Sayfa"}
-              </span>
+              <AppNavIcon name="home" />
+              {expanded ? <span>Ana Sayfa</span> : null}
             </Link>
           </li>
 
-          {APP_LINKS.map((app) => (
-            <li key={app.key}>
-              <Link
-                href={app.href}
-                title={app.label}
-                onClick={closeMobile}
-                className={`block border transition-colors ${
-                  activeKey === app.key
-                    ? "border-black bg-navy text-white"
-                    : "border-transparent text-charcoal hover:border-black hover:bg-slate-50"
-                } ${collapsed && !mobileOpen ? "px-2 py-3 text-center" : "px-3 py-3"}`}
-              >
-                <span className="text-xs font-semibold uppercase tracking-wide">
-                  {collapsed && !mobileOpen ? app.label.slice(0, 2) : app.label}
-                </span>
-                {(!collapsed || mobileOpen) && (
-                  <span
-                    className={`mt-1 block text-[11px] leading-snug ${
-                      activeKey === app.key ? "text-slate-300" : "text-slate-500"
-                    }`}
-                  >
-                    {app.description}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
+          {!isLoading &&
+            visibleApps.map((app) => (
+              <li key={app.key}>
+                <Link
+                  href={app.href}
+                  title={app.label}
+                  onClick={closeMobile}
+                  className={navItemClass(activeKey === app.key, compact)}
+                >
+                  <AppNavIcon name={app.key} />
+                  {expanded ? <span>{app.label}</span> : null}
+                </Link>
+              </li>
+            ))}
         </ul>
       </nav>
 
-      {(!collapsed || mobileOpen) && (
-        <div className="border-t border-black px-4 py-3">
+      {expanded && (
+        <div className="shrink-0 border-t border-black px-3 py-2.5">
           <AuthActions />
         </div>
       )}

@@ -11,7 +11,7 @@ import {
   revokeAttachments,
   type WorkOrderAttachment,
 } from "@/types/attachment";
-import type { ContaFormValues } from "@/types/conta";
+import type { ContaFormValues, ContaImage } from "@/types/conta";
 
 function getDefaultValues(): Partial<ContaFormValues> {
   return {
@@ -22,18 +22,39 @@ function getDefaultValues(): Partial<ContaFormValues> {
   };
 }
 
+/** Varsayılan [] her render'da yeni referans üretir → useEffect döngüsü */
+const EMPTY_EXISTING_IMAGES: ContaImage[] = [];
+
 interface ContaFormProps {
+  mode?: "create" | "edit";
+  recordId?: string;
+  initialValues?: ContaFormValues;
+  contaCode?: string;
+  existingImages?: ContaImage[];
   onSaved?: (payload: { id: string; contaCode: string }) => void;
   onCancel?: () => void;
 }
 
-export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
+export function ContaForm({
+  mode = "create",
+  recordId,
+  initialValues,
+  contaCode,
+  existingImages = EMPTY_EXISTING_IMAGES,
+  onSaved,
+  onCancel,
+}: ContaFormProps) {
+  const isEdit = mode === "edit";
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [lastContaCode, setLastContaCode] = useState<string | null>(null);
   const [nextContaCode, setNextContaCode] = useState("CT-0001");
   const [sheetsWarning, setSheetsWarning] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<WorkOrderAttachment[]>([]);
+  const [keptImages, setKeptImages] = useState<ContaImage[]>(existingImages);
+  const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>(
+    [],
+  );
 
   const {
     register,
@@ -42,7 +63,7 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
     formState: { errors, isSubmitting },
   } = useForm<ContaFormValues>({
     resolver: contaFormResolver,
-    defaultValues: getDefaultValues(),
+    defaultValues: initialValues ?? getDefaultValues(),
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
@@ -60,8 +81,28 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
   };
 
   useEffect(() => {
-    void loadNextCode();
-  }, []);
+    if (!isEdit) {
+      void loadNextCode();
+    }
+  }, [isEdit]);
+
+  useEffect(() => {
+    if (initialValues) {
+      reset(initialValues);
+    }
+  }, [initialValues, reset]);
+
+  useEffect(() => {
+    setKeptImages(existingImages);
+    setRemovedAttachmentIds([]);
+  }, [existingImages]);
+
+  const removeExistingImage = (imageId: string) => {
+    setKeptImages((current) => current.filter((image) => image.id !== imageId));
+    setRemovedAttachmentIds((current) =>
+      current.includes(imageId) ? current : [...current, imageId],
+    );
+  };
 
   const onSubmit = async (data: ContaFormValues) => {
     setSubmitError(null);
@@ -69,16 +110,24 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
     setSubmitSuccess(false);
 
     const formData = new FormData();
-    formData.append("payload", JSON.stringify(data));
+    formData.append(
+      "payload",
+      JSON.stringify(
+        isEdit ? { ...data, removedAttachmentIds } : data,
+      ),
+    );
     attachments.forEach((attachment) => {
       formData.append("images", attachment.file);
     });
 
     try {
-      const response = await fetch("/api/conta", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        isEdit && recordId ? `/api/conta/${recordId}` : "/api/conta",
+        {
+          method: isEdit ? "PATCH" : "POST",
+          body: formData,
+        },
+      );
 
       const result = await response.json();
 
@@ -92,25 +141,29 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
 
       if (!result.sheetsSynced && result.sheetsWarning) {
         setSheetsWarning(result.sheetsWarning);
-      } else if (result.imageUrls?.length > 0) {
+      } else {
         setSheetsWarning(null);
       }
 
       revokeAttachments(attachments);
       setAttachments([]);
-      reset(getDefaultValues());
-      await loadNextCode();
+      if (!isEdit) {
+        reset(getDefaultValues());
+        await loadNextCode();
+      }
       onSaved?.({ id: result.id, contaCode: result.contaCode });
     } catch {
       setSubmitError("Sunucuya bağlanılamadı. Lütfen tekrar deneyin.");
     }
   };
 
+  const displayCode = isEdit ? (contaCode ?? "—") : nextContaCode;
+
   return (
     <div className="border border-black bg-white">
       <div className="flex items-center justify-between gap-3 border-b border-black px-4 py-4 md:px-6">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-charcoal">
-          Yeni Conta Kaydı
+          {isEdit ? "Conta Kaydını Düzenle" : "Yeni Conta Kaydı"}
         </h2>
         {onCancel && (
           <button
@@ -134,7 +187,7 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
               id="contaId"
               type="text"
               readOnly
-              value={nextContaCode}
+              value={displayCode}
               className={`${sharpInputClassName} bg-slate-50 font-medium`}
             />
           </SharpField>
@@ -220,9 +273,36 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
         </FormSection>
 
         <FormSection title="Görsel Dosyalar" layout="stack">
+          {isEdit && keptImages.length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                Mevcut görseller
+              </p>
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {keptImages.map((image) => (
+                  <li key={image.id} className="relative border border-black">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={image.url}
+                      alt="Conta görseli"
+                      className="aspect-square w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(image.id)}
+                      className="absolute right-1 top-1 border border-black bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-charcoal hover:bg-red-50"
+                    >
+                      Sil
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <SharpImageUploadZone
             id="contaGorselleri"
-            label="Conta Görselleri"
+            label={isEdit ? "Yeni görseller ekle" : "Conta Görselleri"}
             hint="Birden fazla görsel yükleyebilirsiniz"
             category="product"
             attachments={attachments}
@@ -245,7 +325,7 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
               className="mb-4 border border-navy bg-slate-100 px-3 py-2 text-sm text-navy"
               role="status"
             >
-              Conta kaydı Supabase&apos;e kaydedildi. Atanan ID:{" "}
+              Conta kaydı {isEdit ? "güncellendi" : "kaydedildi"}. ID:{" "}
               <span className="font-semibold">{lastContaCode}</span>
             </p>
           )}
@@ -264,7 +344,13 @@ export function ContaForm({ onSaved, onCancel }: ContaFormProps) {
             disabled={isSubmitting}
             className="w-full border border-black bg-navy px-4 py-3 text-sm font-medium uppercase tracking-wide text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
+            {isSubmitting
+              ? isEdit
+                ? "Güncelleniyor..."
+                : "Kaydediliyor..."
+              : isEdit
+                ? "Güncelle"
+                : "Kaydet"}
           </button>
         </div>
       </form>

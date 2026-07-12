@@ -10,6 +10,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
+import { AccessProvider } from "@/components/auth/AccessProvider";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { getActiveAppKey } from "@/lib/constants/app-links";
 
@@ -85,25 +86,27 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   return (
-    <SidebarContext.Provider
-      value={{ collapsed, mobileOpen, toggleCollapsed, toggleMobile, closeMobile }}
-    >
-      <div className="flex min-h-full bg-slate-50">
-        {mobileOpen && (
-          <button
-            type="button"
-            aria-label="Menüyü kapat"
-            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-            onClick={closeMobile}
-          />
-        )}
+    <AccessProvider>
+      <SidebarContext.Provider
+        value={{ collapsed, mobileOpen, toggleCollapsed, toggleMobile, closeMobile }}
+      >
+        <div className="flex min-h-svh bg-slate-50">
+          {mobileOpen && (
+            <button
+              type="button"
+              aria-label="Menüyü kapat"
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+              onClick={closeMobile}
+            />
+          )}
 
-        <AppSidebar activeKey={activeKey} />
+          <AppSidebar activeKey={activeKey} />
 
-        <div className="flex min-h-full min-w-0 flex-1 flex-col">
-          <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+          <div className="flex min-h-svh min-w-0 flex-1 flex-col">
+            <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+          </div>
         </div>
-      </div>
-    </SidebarContext.Provider>
+      </SidebarContext.Provider>
+    </AccessProvider>
   );
 }

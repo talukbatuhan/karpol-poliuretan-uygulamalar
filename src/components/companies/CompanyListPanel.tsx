@@ -23,6 +23,7 @@ interface CompanyListPanelProps {
   onTypeFilterChange: (value: "" | CompanyType) => void;
   onSelect: (id: string) => void;
   onCreateNew: () => void;
+  canManage?: boolean;
 }
 
 function formatDate(value: string): string {
@@ -45,21 +46,24 @@ export function CompanyListPanel({
   onTypeFilterChange,
   onSelect,
   onCreateNew,
+  canManage = false,
 }: CompanyListPanelProps) {
   return (
     <div className="flex h-full flex-col border border-black bg-white">
       <div className="border-b border-black px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-charcoal">
-            Firma Listesi
+            Firma Kartları
           </h2>
-          <button
-            type="button"
-            onClick={onCreateNew}
-            className="border border-black bg-navy px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white hover:bg-navy-light"
-          >
-            + Yeni Firma
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              onClick={onCreateNew}
+              className="border border-black bg-navy px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white hover:bg-navy-light"
+            >
+              + Yeni Kart
+            </button>
+          )}
         </div>
       </div>
 

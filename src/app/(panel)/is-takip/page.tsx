@@ -11,7 +11,7 @@ export default function IsTakipPage() {
   return (
     <>
       <PageHeader title="İş Takip Paneli" />
-      <div className="mx-auto max-w-4xl px-4 py-6 md:px-8 md:py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
         <WorkOrderPanel />
       </div>
     </>

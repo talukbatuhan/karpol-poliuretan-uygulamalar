@@ -3,12 +3,15 @@ import { z } from "zod";
 
 const optionalId = z.string();
 const requiredId = z.string().min(1, "Seçim zorunludur");
+const requiredText = z.string().trim().min(1, "Bu alan zorunludur");
 
 export const workOrderFormSchema = z.object({
   tarih: z.string().min(1, "Tarih gereklidir"),
   sehirId: optionalId,
-  talepEdenFirmaId: requiredId,
-  uygulayiciFirmaId: requiredId,
+  talepEdenFirma: requiredText,
+  uygulayiciFirma: requiredText,
+  talepEdenFirmaKartId: optionalId,
+  uygulayiciFirmaKartId: optionalId,
   isTuruId: requiredId,
   isAciklamasi: optionalId,
   miktar: z

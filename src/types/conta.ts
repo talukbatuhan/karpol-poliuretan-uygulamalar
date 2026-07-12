@@ -19,6 +19,13 @@ export interface ContaRecord {
 
 export interface ContaRecordDetail extends ContaRecord {
   imageUrls: string[];
+  images: ContaImage[];
+}
+
+export interface ContaImage {
+  id: string;
+  url: string;
+  filePath: string;
 }
 
 export function mapFormToContaRecord(

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   createWorkOrderLookup,
   listWorkOrderLookups,
@@ -13,9 +13,9 @@ interface RouteContext {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
-    const user = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Giriş gerekli" }, { status: 401 });
+    const admin = await requireAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "Yetki gerekli" }, { status: 403 });
     }
 
     const { type } = await context.params;
@@ -33,9 +33,9 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const user = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Giriş gerekli" }, { status: 401 });
+    const admin = await requireAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "Yetki gerekli" }, { status: 403 });
     }
 
     const { type } = await context.params;

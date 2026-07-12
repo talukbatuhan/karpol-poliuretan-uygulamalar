@@ -6,68 +6,54 @@ export type AppNavKey =
   | "notlar"
   | "adres-yazici"
   | "e-alisveris"
-  | "teknik-resim";
+  | "teknik-resim"
+  | "kullanicilar";
 
-export const APP_LINKS: AppLink[] = [
-  {
-    key: "is-takip",
-    href: "/is-takip",
-    label: "İş Takip",
-    description: "İş emirleri ve günlük takip kayıtları",
-  },
-  {
-    key: "firmalar",
-    href: "/firmalar",
-    label: "Firmalar",
-    description: "Firma kayıtları ve yönetimi",
-  },
-  {
-    key: "conta-takip",
-    href: "/conta-takip",
-    label: "Conta Takip",
-    description: "Conta üretim ve sipariş takibi",
-  },
-  {
-    key: "notlar",
-    href: "/notlar",
-    label: "Notlar",
-    description: "Hızlı not alma ve görsel ekleme",
-  },
-  {
-    key: "adres-yazici",
-    href: "/adres-yazici",
-    label: "Adres Yazıcı",
-    description: "Adres etiketi oluşturma ve yazdırma",
-  },
-  {
-    key: "e-alisveris",
-    href: "/e-alisveris",
-    label: "E-Alışveriş",
-    description: "Kişisel alışveriş kayıtları ve faturalar",
-  },
-  {
-    key: "teknik-resim",
-    href: "/teknik-resim",
-    label: "Teknik Resim",
-    description: "Parametrik CAD ve teknik çizim uygulamaları",
-  },
-];
+/** Kullanıcıya atanabilir uygulama anahtarları (admin paneli hariç) */
+export type ManagedAppKey = Exclude<AppNavKey, "dashboard" | "kullanicilar">;
 
 export interface AppLink {
   key: AppNavKey;
   href: string;
   label: string;
-  description: string;
 }
+
+export const APP_LINKS: AppLink[] = [
+  { key: "is-takip", href: "/is-takip", label: "İş Takip" },
+  { key: "firmalar", href: "/firmalar", label: "Firma Kartları" },
+  { key: "conta-takip", href: "/conta-takip", label: "Conta Takip" },
+  { key: "notlar", href: "/notlar", label: "Notlar" },
+  { key: "adres-yazici", href: "/adres-yazici", label: "Adres Yazıcı" },
+  { key: "e-alisveris", href: "/e-alisveris", label: "E-Alışveriş" },
+  { key: "teknik-resim", href: "/teknik-resim", label: "Teknik Resim" },
+];
+
+export const ADMIN_APP_LINKS: AppLink[] = [
+  {
+    key: "kullanicilar",
+    href: "/kullanicilar",
+    label: "Kullanıcı Yönetimi",
+  },
+];
+
+export const MANAGED_APP_KEYS: ManagedAppKey[] = APP_LINKS.map(
+  (app) => app.key as ManagedAppKey,
+);
+
+export const ALL_NAV_LINKS: AppLink[] = [...APP_LINKS, ...ADMIN_APP_LINKS];
 
 export function getActiveAppKey(pathname: string): AppNavKey | undefined {
   if (pathname === "/") return undefined;
 
-  for (const app of APP_LINKS) {
+  for (const app of ALL_NAV_LINKS) {
     if (pathname === app.href || pathname.startsWith(`${app.href}/`)) {
       return app.key;
     }
   }
 
   return undefined;
+}
+
+export function isManagedAppKey(value: string): value is ManagedAppKey {
+  return MANAGED_APP_KEYS.includes(value as ManagedAppKey);
 }

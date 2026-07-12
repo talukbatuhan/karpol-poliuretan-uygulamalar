@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/auth/callback", "/adres-yazici"];
+import { canAccessApp, buildAccessProfile } from "@/lib/auth/access";
+import { getActiveAppKey } from "@/lib/constants/app-links";
+
+const PUBLIC_ROUTES = ["/login", "/auth/callback", "/adres-yazici", "/g"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -49,6 +52,39 @@ export async function updateSession(request: NextRequest) {
     homeUrl.pathname = redirectTo;
     homeUrl.search = "";
     return NextResponse.redirect(homeUrl);
+  }
+
+  if (user && !isPublicRoute) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, role, allowed_apps, is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const access = buildAccessProfile({
+      id: user.id,
+      email: user.email ?? profile?.email,
+      fullName: profile?.full_name,
+      role: profile?.role,
+      allowedApps: profile?.allowed_apps,
+      isActive: profile?.is_active ?? true,
+    });
+
+    if (!access.isActive) {
+      await supabase.auth.signOut();
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("error", "inactive");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const appKey = getActiveAppKey(pathname);
+    if (appKey && !canAccessApp(access, appKey)) {
+      const homeUrl = request.nextUrl.clone();
+      homeUrl.pathname = "/";
+      homeUrl.search = "";
+      return NextResponse.redirect(homeUrl);
+    }
   }
 
   return supabaseResponse;

@@ -629,10 +629,14 @@
         refLines.innerHTML += '<line x1="' + cx + '" y1="' + (-(Dk / 2 + h)) + '" x2="' + cx + '" y2="' + (Dk / 2 + h) + '" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4" />';
       });
 
-      // 4. Ölçülendirmeler
+      // 4. Ölçülendirmeler — yan paneldeki tüm alanlar
       var dims = document.getElementById('dims');
-      var maxY = Math.max(H1 / 2, H2 / 2, Dk / 2 + h) + 45;
-      var dimMarkup = '<defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="' + '#dc2626' + '"/></marker></defs>';
+      var crestR = Dk / 2 + h;
+      var troughR = Dk / 2;
+      var topProfile = Math.max(H1 / 2, H2 / 2, crestR);
+      var yLyaka = -(topProfile + 32);
+      var maxY = topProfile + 52;
+      var dimMarkup = '<defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker></defs>';
 
       function dimLine(x1, y1, x2, y2) {
         return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#dc2626" stroke-width="1.2" marker-start="url(#arrow)" marker-end="url(#arrow)" />';
@@ -649,13 +653,48 @@
       dimMarkup += guide(xStart - 5, -H1 / 2, xStart - 38, -H1 / 2);
       dimMarkup += guide(xStart - 5, H1 / 2, xStart - 38, H1 / 2);
       dimMarkup += dimLine(xStart - 28, -H1 / 2, xStart - 28, H1 / 2);
-      dimMarkup += dimText(xStart - 34, 4, 'Ø' + H1, true);
+      dimMarkup += dimText(xStart - 42, 4, 'Ø' + H1 + ' (H1)', true);
 
       // Sağ ağız H2
       dimMarkup += guide(xEnd + 5, -H2 / 2, xEnd + 38, -H2 / 2);
       dimMarkup += guide(xEnd + 5, H2 / 2, xEnd + 38, H2 / 2);
       dimMarkup += dimLine(xEnd + 28, -H2 / 2, xEnd + 28, H2 / 2);
-      dimMarkup += dimText(xEnd + 22, 4, 'Ø' + H2, true);
+      dimMarkup += dimText(xEnd + 42, 4, 'Ø' + H2 + ' (H2)', true);
+
+      // Sol yaka uzunluğu (lyaka)
+      dimMarkup += guide(xStart, -H1 / 2 - 4, xStart, yLyaka + 6);
+      dimMarkup += guide(xStart + lyaka, -H1 / 2 - 4, xStart + lyaka, yLyaka + 6);
+      dimMarkup += dimLine(xStart, yLyaka, xStart + lyaka, yLyaka);
+      dimMarkup += dimText(xStart + lyaka / 2, yLyaka - 8, 'lyaka=' + lyaka, false);
+
+      // Sağ yaka uzunluğu (lyaka)
+      dimMarkup += guide(xEnd - lyaka, -H2 / 2 - 4, xEnd - lyaka, yLyaka + 6);
+      dimMarkup += guide(xEnd, -H2 / 2 - 4, xEnd, yLyaka + 6);
+      dimMarkup += dimLine(xEnd - lyaka, yLyaka, xEnd, yLyaka);
+      dimMarkup += dimText(xEnd - lyaka / 2, yLyaka - 8, 'lyaka=' + lyaka, false);
+
+      // Körük iç çapı D_koruk (ilk çukur / taban diametresi)
+      var troughX = xStart + lyaka + 2 * dx;
+      if (2 * N - 1 < 2) troughX = (xStart + xEnd) / 2;
+      var dimDkX = troughX;
+      dimMarkup += guide(dimDkX - 4, -troughR, dimDkX - 42, -troughR);
+      dimMarkup += guide(dimDkX - 4, troughR, dimDkX - 42, troughR);
+      dimMarkup += dimLine(dimDkX - 32, -troughR, dimDkX - 32, troughR);
+      dimMarkup += dimText(dimDkX - 46, 4, 'Ø' + Dk + ' (D)', true);
+
+      // Boğum yüksekliği h (ilk tepe)
+      if (crestXCoords.length > 0) {
+        var crestX = crestXCoords[0];
+        var yInner = -troughR;
+        var yOuter = -crestR;
+        dimMarkup += guide(crestX + 4, yOuter, crestX + 40, yOuter);
+        dimMarkup += guide(crestX + 4, yInner, crestX + 40, yInner);
+        dimMarkup += dimLine(crestX + 32, yOuter, crestX + 32, yInner);
+        dimMarkup += dimText(crestX + 48, (yOuter + yInner) / 2 + 4, 'h=' + h, true);
+      }
+
+      // Boğum sayısı N
+      dimMarkup += dimText(0, yLyaka - 22, 'N=' + N + ' boğum', false);
 
       // Toplam L
       dimMarkup += guide(xStart, maxY - 22, xStart, maxY + 10);
@@ -666,8 +705,8 @@
       dims.innerHTML = dimMarkup;
 
       // İçerik sınırlarını güncelle (fit için)
-      var extentX = L / 2 + 55;
-      var extentYTop = Math.max(H1 / 2, H2 / 2, Dk / 2 + h) + 12;
+      var extentX = L / 2 + 70;
+      var extentYTop = Math.abs(yLyaka) + 36;
       var extentYBot = maxY + 18;
       contentBounds = { minX: -extentX, maxX: extentX, minY: -extentYTop, maxY: extentYBot };
 

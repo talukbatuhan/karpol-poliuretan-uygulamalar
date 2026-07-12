@@ -10,11 +10,7 @@ import {
   type WorkOrderLookupType,
 } from "@/types/work-order-lookup";
 
-const LOOKUP_TYPES: WorkOrderLookupType[] = [
-  "companies",
-  "job_types",
-  "personnel",
-];
+const LOOKUP_TYPES: WorkOrderLookupType[] = ["job_types", "personnel"];
 
 interface FormState {
   label: string;
@@ -24,7 +20,7 @@ interface FormState {
 const EMPTY_FORM: FormState = { label: "", phone: "" };
 
 export function WorkOrderSettingsModule() {
-  const [activeType, setActiveType] = useState<WorkOrderLookupType>("companies");
+  const [activeType, setActiveType] = useState<WorkOrderLookupType>("job_types");
   const [items, setItems] = useState<LookupItem[]>([]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -148,7 +144,7 @@ export function WorkOrderSettingsModule() {
     <div className="space-y-6">
       <p className="text-sm text-slate-600">
         İş takip formundaki firma, iş türü ve personel listelerini buradan
-        yönetin. Sorumlu personele WhatsApp bildirimi için telefon numarası
+        yönetin. Sorumlu personele WhatsApp&apos;tan Gönder için telefon numarası
         girin.
       </p>
 

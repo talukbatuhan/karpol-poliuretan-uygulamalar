@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   deleteWorkOrderLookup,
   updateWorkOrderLookup,
@@ -13,9 +13,9 @@ interface RouteContext {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const user = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Giriş gerekli" }, { status: 401 });
+    const admin = await requireAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "Yetki gerekli" }, { status: 403 });
     }
 
     const { type, id } = await context.params;
@@ -48,9 +48,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
-    const user = await requireUser();
-    if (!user) {
-      return NextResponse.json({ error: "Giriş gerekli" }, { status: 401 });
+    const admin = await requireAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "Yetki gerekli" }, { status: 403 });
     }
 
     const { type, id } = await context.params;

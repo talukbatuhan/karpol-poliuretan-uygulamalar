@@ -8,6 +8,11 @@ import { SharpField, sharpInputClassName } from "@/components/form/SharpField";
 import { SharpImageUploadZone } from "@/components/form/SharpImageUploadZone";
 import { SharpSearchableSelect } from "@/components/form/SharpSearchableSelect";
 import { getTodayDateString } from "@/lib/utils/date";
+import { compressImageFile } from "@/lib/utils/compress-image";
+import { openWorkOrderWhatsApp } from "@/lib/whatsapp/build-wa-me-url";
+import { buildWorkOrderWhatsAppDraft } from "@/lib/whatsapp/build-work-order-draft";
+import { buildWorkOrderWhatsAppMessage } from "@/lib/whatsapp/build-work-order-message";
+import type { WorkOrderWhatsAppDraft } from "@/lib/whatsapp/types";
 import { workOrderFormResolver } from "@/lib/validations/work-order-form";
 import type { LookupOption } from "@/types/lookup";
 import type { WorkOrderFormValues } from "@/types/work-order";
@@ -17,7 +22,6 @@ import {
 } from "@/types/attachment";
 
 interface LookupData {
-  companies: LookupOption[];
   jobTypes: LookupOption[];
   personnel: LookupOption[];
   cities: LookupOption[];
@@ -26,7 +30,6 @@ interface LookupData {
 }
 
 const EMPTY_LOOKUPS: LookupData = {
-  companies: [],
   jobTypes: [],
   personnel: [],
   cities: [],
@@ -38,8 +41,10 @@ function getDefaultValues(): Partial<WorkOrderFormValues> {
   return {
     tarih: getTodayDateString(),
     sehirId: "",
-    talepEdenFirmaId: "",
-    uygulayiciFirmaId: "",
+    talepEdenFirma: "",
+    uygulayiciFirma: "",
+    talepEdenFirmaKartId: "",
+    uygulayiciFirmaKartId: "",
     isTuruId: "",
     isAciklamasi: "",
     birimId: "",
@@ -53,11 +58,19 @@ function getDefaultValues(): Partial<WorkOrderFormValues> {
 
 export function SharpForm() {
   const [lookups, setLookups] = useState<LookupData>(EMPTY_LOOKUPS);
+  const [firmaKartlariOptions, setFirmaKartlariOptions] = useState<
+    LookupOption[]
+  >([]);
+  const [useFirmaKartlari, setUseFirmaKartlari] = useState(false);
   const [lookupsLoading, setLookupsLoading] = useState(true);
   const [lookupsError, setLookupsError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
-  const [whatsappInfo, setWhatsappInfo] = useState<string | null>(null);
-  const [whatsappUrl, setWhatsappUrl] = useState<string | null>(null);
+  const [whatsappDraft, setWhatsappDraft] =
+    useState<WorkOrderWhatsAppDraft | null>(null);
+  const [createdWorkOrderId, setCreatedWorkOrderId] = useState<string | null>(
+    null,
+  );
+  const [whatsappHint, setWhatsappHint] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<WorkOrderAttachment[]>([]);
 
   const loadLookups = useCallback(async () => {
@@ -75,7 +88,6 @@ export function SharpForm() {
       }
 
       setLookups({
-        companies: data.companies ?? [],
         jobTypes: data.jobTypes ?? [],
         personnel: data.personnel ?? [],
         cities: data.cities ?? [],
@@ -90,15 +102,36 @@ export function SharpForm() {
     }
   }, []);
 
+  const loadFirmaKartlari = useCallback(async () => {
+    try {
+      const response = await fetch("/api/firmalar/options", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) {
+        setFirmaKartlariOptions([]);
+        return;
+      }
+      setFirmaKartlariOptions(data.options ?? []);
+    } catch {
+      setFirmaKartlariOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     void loadLookups();
   }, [loadLookups]);
+
+  useEffect(() => {
+    if (useFirmaKartlari) {
+      void loadFirmaKartlari();
+    }
+  }, [useFirmaKartlari, loadFirmaKartlari]);
 
   const {
     register,
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<WorkOrderFormValues>({
     resolver: workOrderFormResolver,
@@ -107,16 +140,47 @@ export function SharpForm() {
     reValidateMode: "onChange",
   });
 
+  const handleFirmaKartlariToggle = (checked: boolean) => {
+    setUseFirmaKartlari(checked);
+    setValue("talepEdenFirma", "");
+    setValue("uygulayiciFirma", "");
+    setValue("talepEdenFirmaKartId", "");
+    setValue("uygulayiciFirmaKartId", "");
+  };
+
   const onSubmit = async (data: WorkOrderFormValues) => {
     setSubmitSuccess(null);
-    setWhatsappInfo(null);
-    setWhatsappUrl(null);
+    setWhatsappDraft(null);
+    setCreatedWorkOrderId(null);
+    setWhatsappHint(null);
 
     try {
+      const productAttachments = attachments.filter(
+        (item) => item.category === "product",
+      );
+      const technicalAttachments = attachments.filter(
+        (item) => item.category === "technical",
+      );
+
+      const [compressedProduct, compressedTechnical] = await Promise.all([
+        Promise.all(productAttachments.map((item) => compressImageFile(item.file))),
+        Promise.all(
+          technicalAttachments.map((item) => compressImageFile(item.file)),
+        ),
+      ]);
+
+      const formData = new FormData();
+      formData.append("payload", JSON.stringify(data));
+      for (const file of compressedProduct) {
+        formData.append("productImages", file);
+      }
+      for (const file of compressedTechnical) {
+        formData.append("technicalImages", file);
+      }
+
       const response = await fetch("/api/is-takip/work-orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData,
       });
 
       const result = await response.json();
@@ -126,23 +190,41 @@ export function SharpForm() {
         return;
       }
 
-      const { whatsappSent, whatsappError, whatsappUrl: waUrl } =
-        result.result ?? {};
-
+      const draft = buildWorkOrderWhatsAppDraft(data, lookups, {
+        productUrls: result.result?.productUrls ?? [],
+        technicalUrls: result.result?.technicalUrls ?? [],
+      });
       setSubmitSuccess("İş kaydı başarıyla oluşturuldu.");
-      if (whatsappSent) {
-        setWhatsappInfo("Sorumlu personele WhatsApp mesajı gönderildi.");
-      } else if (whatsappError) {
-        setWhatsappInfo(whatsappError);
-        if (waUrl) setWhatsappUrl(waUrl);
+      setCreatedWorkOrderId(result.result?.id ?? null);
+      if (draft) {
+        setWhatsappDraft(draft);
+      } else {
+        setWhatsappHint(
+          "Sorumlu personelin telefonu tanımlı değil. Ayarlar → Personel’den WhatsApp telefonu ekleyin.",
+        );
       }
 
       revokeAttachments(attachments);
       setAttachments([]);
       reset(getDefaultValues());
+      setUseFirmaKartlari(false);
       setLookupsError(null);
     } catch {
       setLookupsError("Kayıt oluşturulamadı");
+    }
+  };
+
+  const handleWhatsAppSend = () => {
+    if (!whatsappDraft) return;
+    const message = buildWorkOrderWhatsAppMessage(whatsappDraft);
+    openWorkOrderWhatsApp(whatsappDraft.phone, message);
+
+    if (createdWorkOrderId) {
+      void fetch(`/api/is-takip/work-orders/${createdWorkOrderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsappSent: true }),
+      });
     }
   };
 
@@ -156,10 +238,21 @@ export function SharpForm() {
 
   return (
     <div className="border border-black bg-white">
-      <div className="border-b border-black px-4 py-4 md:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black px-4 py-4 md:px-6">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-charcoal">
           Yeni İş Kaydı
         </h2>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-charcoal">
+          <input
+            type="checkbox"
+            checked={useFirmaKartlari}
+            onChange={(event) => handleFirmaKartlariToggle(event.target.checked)}
+            className="h-4 w-4 border border-black accent-navy"
+          />
+          <span className="font-medium uppercase tracking-wide">
+            Firma kartlarından seç
+          </span>
+        </label>
       </div>
 
       <form
@@ -206,46 +299,84 @@ export function SharpForm() {
 
           <SharpField
             label="Talep Eden Firma"
-            htmlFor="talepEdenFirmaId"
-            error={errors.talepEdenFirmaId?.message}
+            htmlFor="talepEdenFirma"
+            error={errors.talepEdenFirma?.message}
             required
           >
-            <Controller
-              name="talepEdenFirmaId"
-              control={control}
-              render={({ field }) => (
-                <SharpSearchableSelect
-                  id="talepEdenFirmaId"
-                  options={lookups.companies}
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  aria-invalid={!!errors.talepEdenFirmaId}
-                />
-              )}
-            />
+            {useFirmaKartlari ? (
+              <Controller
+                name="talepEdenFirmaKartId"
+                control={control}
+                render={({ field }) => (
+                  <SharpSearchableSelect
+                    id="talepEdenFirma"
+                    options={firmaKartlariOptions}
+                    value={field.value ?? ""}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      const option = firmaKartlariOptions.find(
+                        (item) => item.value === value,
+                      );
+                      setValue("talepEdenFirma", option?.label ?? "", {
+                        shouldValidate: true,
+                      });
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder="Firma kartı seçin"
+                    aria-invalid={!!errors.talepEdenFirma}
+                  />
+                )}
+              />
+            ) : (
+              <input
+                id="talepEdenFirma"
+                type="text"
+                placeholder="Firma adını yazın"
+                className={sharpInputClassName}
+                {...register("talepEdenFirma")}
+              />
+            )}
           </SharpField>
 
           <SharpField
             label="Uygulayıcı Firma"
-            htmlFor="uygulayiciFirmaId"
-            error={errors.uygulayiciFirmaId?.message}
+            htmlFor="uygulayiciFirma"
+            error={errors.uygulayiciFirma?.message}
             required
           >
-            <Controller
-              name="uygulayiciFirmaId"
-              control={control}
-              render={({ field }) => (
-                <SharpSearchableSelect
-                  id="uygulayiciFirmaId"
-                  options={lookups.companies}
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  aria-invalid={!!errors.uygulayiciFirmaId}
-                />
-              )}
-            />
+            {useFirmaKartlari ? (
+              <Controller
+                name="uygulayiciFirmaKartId"
+                control={control}
+                render={({ field }) => (
+                  <SharpSearchableSelect
+                    id="uygulayiciFirma"
+                    options={firmaKartlariOptions}
+                    value={field.value ?? ""}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      const option = firmaKartlariOptions.find(
+                        (item) => item.value === value,
+                      );
+                      setValue("uygulayiciFirma", option?.label ?? "", {
+                        shouldValidate: true,
+                      });
+                    }}
+                    onBlur={field.onBlur}
+                    placeholder="Firma kartı seçin"
+                    aria-invalid={!!errors.uygulayiciFirma}
+                  />
+                )}
+              />
+            ) : (
+              <input
+                id="uygulayiciFirma"
+                type="text"
+                placeholder="Firma adını yazın"
+                className={sharpInputClassName}
+                {...register("uygulayiciFirma")}
+              />
+            )}
           </SharpField>
 
           <SharpField
@@ -451,29 +582,23 @@ export function SharpForm() {
             </p>
           )}
 
-          {whatsappInfo && (
+          {whatsappHint && (
             <p
-              className={`mb-3 border px-3 py-2 text-sm ${
-                whatsappInfo.includes("gönderildi")
-                  ? "border-green-700 bg-green-50 text-green-800"
-                  : "border-amber-700 bg-amber-50 text-amber-900"
-              }`}
+              className="mb-3 border border-amber-700 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+              role="status"
             >
-              {whatsappInfo}
-              {whatsappUrl && (
-                <>
-                  {" "}
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium underline"
-                  >
-                    WhatsApp ile gönder
-                  </a>
-                </>
-              )}
+              {whatsappHint}
             </p>
+          )}
+
+          {whatsappDraft && (
+            <button
+              type="button"
+              onClick={handleWhatsAppSend}
+              className="mb-3 w-full border border-black bg-white px-4 py-3 text-sm font-medium uppercase tracking-wide text-charcoal transition-colors hover:bg-slate-100"
+            >
+              WhatsApp&apos;tan Gönder
+            </button>
           )}
 
           <button
@@ -481,7 +606,9 @@ export function SharpForm() {
             disabled={isSubmitting}
             className="w-full border border-black bg-navy px-4 py-3 text-sm font-medium uppercase tracking-wide text-white transition-colors hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Kaydediliyor..." : "Kaydet ve Bildir"}
+            {isSubmitting
+              ? "Sıkıştırılıyor / kaydediliyor..."
+              : "Kaydet"}
           </button>
         </div>
       </form>

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContaDetailCard } from "@/components/conta/ContaDetailCard";
 import { ContaForm } from "@/components/conta/ContaForm";
 import { ContaListPanel } from "@/components/conta/ContaListPanel";
-import type { ContaRecord } from "@/types/conta";
+import type { ContaFormValues, ContaRecord, ContaRecordDetail } from "@/types/conta";
 
 function normalizeSearch(text: string): string {
   return text
@@ -14,10 +14,23 @@ function normalizeSearch(text: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+type RightPane =
+  | { mode: "empty" }
+  | { mode: "detail"; recordId: string }
+  | { mode: "create" }
+  | {
+      mode: "edit";
+      recordId: string;
+      contaCode: string;
+      values: ContaFormValues;
+      images: ContaRecordDetail["images"];
+    };
+
 export function ContaModule() {
   const [records, setRecords] = useState<ContaRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [pane, setPane] = useState<RightPane>({ mode: "empty" });
+  const [detailRefreshKey, setDetailRefreshKey] = useState(0);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
@@ -67,19 +80,45 @@ export function ContaModule() {
   }, [records, search]);
 
   const handleSelect = (id: string) => {
-    setIsCreating(false);
     setSelectedId(id);
+    setPane({ mode: "detail", recordId: id });
   };
 
   const handleCreateNew = () => {
     setSelectedId(null);
-    setIsCreating(true);
+    setPane({ mode: "create" });
   };
 
   const handleSaved = async (payload: { id: string; contaCode: string }) => {
     await loadRecords();
     setSelectedId(payload.id);
-    setIsCreating(false);
+    setDetailRefreshKey((key) => key + 1);
+    setPane({ mode: "detail", recordId: payload.id });
+  };
+
+  const handleEdit = (record: ContaRecordDetail) => {
+    setSelectedId(record.id);
+    setPane({
+      mode: "edit",
+      recordId: record.id,
+      contaCode: record.contaCode,
+      values: {
+        firmaIsmi: record.firmaIsmi,
+        marka: record.marka,
+        uzunluk: record.uzunluk,
+        adet: record.adet,
+        renk: record.renk,
+      },
+      images: record.images ?? [],
+    });
+  };
+
+  const handleDeleted = async (id: string) => {
+    await loadRecords();
+    if (selectedId === id) {
+      setSelectedId(null);
+    }
+    setPane({ mode: "empty" });
   };
 
   return (
@@ -105,10 +144,33 @@ export function ContaModule() {
         />
 
         <div className="min-w-0">
-          {isCreating ? (
-            <ContaForm onSaved={handleSaved} onCancel={() => setIsCreating(false)} />
+          {pane.mode === "create" ? (
+            <ContaForm
+              mode="create"
+              onSaved={handleSaved}
+              onCancel={() => setPane({ mode: "empty" })}
+            />
+          ) : pane.mode === "edit" ? (
+            <ContaForm
+              mode="edit"
+              recordId={pane.recordId}
+              contaCode={pane.contaCode}
+              initialValues={pane.values}
+              existingImages={pane.images}
+              onSaved={handleSaved}
+              onCancel={() =>
+                setPane({ mode: "detail", recordId: pane.recordId })
+              }
+            />
+          ) : pane.mode === "detail" ? (
+            <ContaDetailCard
+              recordId={pane.recordId}
+              refreshKey={detailRefreshKey}
+              onEdit={handleEdit}
+              onDeleted={handleDeleted}
+            />
           ) : (
-            <ContaDetailCard recordId={selectedId} />
+            <ContaDetailCard recordId={null} />
           )}
         </div>
       </div>
